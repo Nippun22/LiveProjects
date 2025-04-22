@@ -1,0 +1,48 @@
+--Project Description
+--This project deals with Instagram user’s data. Using SQL, the project will fetch actionable
+--insights for the product and marketing teams and investors.
+--Approach
+--A.
+--1. Loyal user reward
+SELECT id, username, created_at FROM users ORDER BY created_at LIMIT 5;
+--2. Interactive user engagement
+SELECT user.id, user.username FROM users LEFT JOIN photos ON user.id =
+photos.user_id WHERE photos.id IS NULL;
+--3. Contest winner declaration
+SELECT u.id, u.username, p.id AS photo_id, COUNT(l.photo_id) AS total_likes
+FROM users u JOIN photos p ON u.id = p.user_id LEFT JOIN likes l ON p.id =
+l.photo_id group by p.id order by total_likes desc limit 1;
+--4. Hashtag Research
+SELECT t.tag_name, COUNT(pt.tag_id) AS tag_count FROM tags t JOIN
+photo_tags pt ON t.id = pt.tag_id group by t.tag_name order by tag_count
+desc limit 5;
+--5. Ad campaign launch
+SELECT DAYNAME(created_at) AS reg_day, COUNT(*) AS reg_count FROM users
+group by reg_day order by reg_count desc limit 1;
+
+--B.
+--1. User engagement
+SELECT (SELECT COUNT(*) FROM photos) / (SELECT COUNT(*) FROM users) AS
+avg_posts_per_user;
+
+--2. Bots & fake accounts
+
+SELECT u.id, u.username FROM users u JOIN likes l ON u.id = l.user_id group by
+u.id, u.username having COUNT(DISTINCT l.photo_id) = (SELECT COUNT(*)
+FROM photos);
+
+--Teck-Stack used: MySQL Workbench
+
+--Insights:
+--Using registration timestamps, the five oldest users can be identified and then tagged as
+--loyal users. The people having account and still not posted anything can be categorised as
+--“inactive users”. We can send them promotional emails to encourage them to post content
+--and be active on the social media. The user having the most likes on a particular post or
+--photo is chosen as contest winner. Top five hashtags have been found that can help brands
+--to reach more and more people by using these hashtags on their posts or reels. Most of the
+--users have registered on Thursday which makes it a lucky day for optimal Ad timing. The
+--average number of posts per user is 1.3. A bot is the one that shows unusual behaviour like
+--one user liked every post in the database which means it's a bot.
+
+--Results:
+--All the tasks done using SQL queries effectively showing great results.
