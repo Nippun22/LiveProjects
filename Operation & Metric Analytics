@@ -1,0 +1,75 @@
+Project Description
+Operation Analytics, which is an important process for understanding and improving a
+company’s end to end operations. Using SQL, this project will deal with the provided
+datasets to analyze and extract valuable insights. The key component of this project is metrix
+spikes.
+Approach
+A. Job Data Analysis
+1. Job reviewed over time
+SELECT DATE(STR_TO_DATE(ds, '%Y/%m/%d')) AS review_date,
+HOUR(STR_TO_DATE(CONCAT(DATE(STR_TO_DATE(ds, '%Y/%m/%d')), ' ',
+SUBSTR(time(STR_TO_DATE(ds, '%Y/%m/%d %H:%i:%s')), 1, 2), ':00:00'), '%Y-
+%m-%d %H:%i:%s')) AS review_hour, COUNT(*) AS jobs_reviewed from
+job_data where STR_TO_DATE(ds, '%Y/%m/%d') between '2020-11-01' and
+'2020-11-30' group by review_date, review_hour order by review_date,
+review_hour;
+2. Throughput analysis
+SELECT DATE(STR_TO_DATE(ds, '%Y/%m/%d')) AS event_date, COUNT(*) /
+SUM(time_spent) AS throughput from job_data group by event_date order by
+event_date; SELECT DATE(STR_TO_DATE(ds, '%Y/%m/%d')) AS event_date,
+AVG(daily_throughput) OVER (order by BY DATE(STR_TO_DATE(ds,
+'%Y/%m/%d')) ROWS between 6 PRECEDING AND CURRENT ROW) AS
+rolling_avg_throughput from ( SELECT DATE(STR_TO_DATE(ds, '%Y/%m/%d'))
+AS event_date, COUNT(*) / SUM(time_spent) AS daily_throughput from
+job_data group by event_date ) AS daily_throughput_data order by
+event_date;
+3. Language share analysis
+WITH LanguageCounts AS ( SELECT language, COUNT(*) AS count from
+job_data where STR_TO_DATE(ds, '%Y/%m/%d') >= DATE_SUB(CURDATE(),
+INTERVAL 30 DAY) group by language ) SELECT language, (count / (SELECT
+SUM(count) from LanguageCounts)) * 100 AS percentage_share from
+LanguageCounts order by percentage_share desc;
+4. Duplicate rows detection
+
+SELECT job_id, actor_id, event, language, time_spent, org, ds, COUNT(*) AS
+duplicate_count from job_data group by job_id, actor_id, event, language,
+time_spent, org, ds having COUNT(*) > 1;
+
+B. Investigating Metric Spike
+1. weekly user engagement
+SELECT YEARWEEK(event_time, 3) AS week_of_year COUNT(DISTINCT user_id)
+AS weekly_active_users from events group by week_of_year order by
+week_of_year;
+2. User growth analysis
+SELECT DATE(signup_date) AS signup_date, COUNT(*) AS new_users,
+SUM(COUNT(*)) OVER (order by DATE(signup_date)) AS cumulative_users
+FROM users group by signup_date order by signup_date;
+3. Weekly retention analysis
+WITH WeeklyCohorts AS ( SELECT user_id, MIN(YEARWEEK(signup_date, 3)) AS
+signup_week from users group by user_id ), WeeklyActivity AS ( SELECT
+user_id, YEARWEEK(event_time, 3) AS activity_week from events group by
+user_id, activity_week ) SELECT wc.signup_week, wa.activity_week,
+COUNT(DISTINCT wa.user_id) AS retained_users from WeeklyCohorts wc JOIN
+WeeklyActivity wa ON wc.user_id = wa.user_id and wa.activity_week >=
+wc.signup_week group by wc.signup_week, wa.activity_week order by
+wc.signup_week, wa.activity_week;
+4. Weekly engagement per device
+SELECT YEARWEEK(event_time, 3) AS week_of_year, COUNT(DISTINCT user_id)
+AS weekly_active_users from events group by week_of_year, device order by
+week_of_year, device;
+5. Email engagement analysis
+SELECT DATE(sent_at) AS email_date SUM(CASE WHEN event_type = 'open'
+THEN 1 ELSE 0 END) AS emails_opened, SUM(CASE WHEN event_type = 'click'
+THEN 1 ELSE 0 END) AS clicks, COUNT(*) AS emails_sent from email_events
+group by email_date order by email_date;
+
+Teck-Stack used: MySQL Workbench
+
+Insights:
+This project highlights the jobs which were reviewed over time using review date and time.
+
+Results:
+All the tasks done using SQL queries effectively showing great results. Throughput gradually
+increases or decreases over November. Language share analysis highlights the percentage of
+shares over time. The project removed duplicate rows. The project finally investigated
+project spikes.
